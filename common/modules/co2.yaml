@@ -13,15 +13,9 @@ api:
       then:
         - lambda: "id(scd40)->set_ambient_pressure_compensation(pressure_mbar);"
 
-i2c:
-  - id: bus_b
-    sda: 26
-    scl: 27
-    scan: true
-
 sensor:
   - platform: scd4x
-    i2c_id: bus_b
+    i2c_id: bus_a
     id: scd40
     measurement_mode: low_power_periodic    
     co2:
@@ -32,6 +26,19 @@ sensor:
           - delta: 5%
           - delta: 5      
     automatic_self_calibration: false
+    ambient_pressure_compensation_source: dps310pressure
+    temperature:
+      name: "SCD40 Temperature"
+      id: scd40_temperature
+      disabled_by_default: true
+      filters:
+        - lambda: return x - id(scd40_temperature_offset).state;
+    humidity:
+      name: "SCD40 Humidity"
+      id: scd40_humidity
+      disabled_by_default: true
+      filters:
+        - lambda: return x - id(scd40_humidity_offset).state;
 
 button:
     - platform: template
@@ -42,3 +49,32 @@ button:
         - scd4x.perform_forced_calibration:
             value: 419
             id: scd40
+number:
+  - platform: template
+    name: SCD40 Humidity Offset
+    id: scd40_humidity_offset
+    restore_value: true
+    initial_value: 0
+    min_value: -70.0
+    max_value: 70.0
+    entity_category: "CONFIG"
+    unit_of_measurement: "%"
+    optimistic: true
+    update_interval: never
+    step: 0.1
+    mode: box
+    disabled_by_default: true
+  - platform: template
+    name: SCD40 Temperature Offset
+    id: scd40_temperature_offset
+    restore_value: true
+    initial_value: 18.86
+    min_value: -70.0
+    max_value: 70.0
+    entity_category: "CONFIG"
+    unit_of_measurement: "°C"
+    optimistic: true
+    update_interval: never
+    step: 0.1
+    mode: box
+    disabled_by_default: true
