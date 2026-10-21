@@ -40,8 +40,10 @@ api:
         url: string
       then:
         - lambda: |-
-            ESP_LOGI("fw", "Setting update manifest URL: %s", url.c_str());
-            id(update_http_request).set_source_url(url);
+            static std::string manifest_url;
+            manifest_url = url;
+            ESP_LOGI("fw", "Setting update manifest URL: %s", manifest_url.c_str());
+            id(update_http_request).set_source_url(manifest_url.c_str());
         - component.update: update_http_request
         - delay: 1s
         - update.perform:
@@ -102,7 +104,7 @@ light:
     default_transition_length: 0s
     chipset: WS2812
     num_leds: 1
-    rgb_order: grb
+    channel_colors: GRB
     effects:
       - pulse:
           name: "Slow Pulse"
@@ -209,27 +211,23 @@ button:
     on_press:
       - logger.log: "Applying firmware update based on selected configuration"
       - lambda: |-
-          std::string base_url = "https://everythingsmarthome.github.io/everything-presence-lite/everything-presence-lite-ha";
+          static std::string base_url;
+          base_url = "https://everythingsmarthome.github.io/everything-presence-lite/everything-presence-lite-ha";
           std::string variant = "${device_config.sensor_variant}";
           if (variant == "ld2450") {
             variant.clear();
           }
-
           if (!variant.empty()) {
             base_url += "-";
             base_url += variant;
           }
-
           if (id(firmware_ble).current_option() == "Disabled") {
             base_url += "-no-ble";
           }
-
           if (id(firmware_co2).current_option() == "Enabled") {
-            base_url += "-co2";
+             base_url += "-co2";
           }
-
           base_url += "-manifest.json";
-
           ESP_LOGI("firmware", "Switching to manifest: %s", base_url.c_str());
           id(update_http_request).set_source_url(base_url.c_str());
       - component.update: update_http_request
